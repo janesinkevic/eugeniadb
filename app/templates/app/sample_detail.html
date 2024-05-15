@@ -1,0 +1,94 @@
+{% extends 'app/base.html' %}
+
+{% block content %}
+<div class="my-3">
+    <a href="{% url 'sample_list' %}" class="btn btn-custom">Back to Main Table</a>
+</div>
+<div class="card mt-4 mb-4">
+    <div class="card-header bg-custom-blue text-white">
+        Sample Details
+    </div>
+    <div class="card-body bg-light">
+        <h5 class="card-title text-custom-black"><strong>{{ sample.sample_name }}</strong></h5>
+        <p class="card-text"><strong>Experiment:</strong> {{ sample.experiment }}</p>
+        <p class="card-text"><strong>Number of variants:</strong> {{ count }}</p>
+    </div>
+
+
+    <table class="table table-bordered table-striped">
+        <thead class="bg-custom-blue text-white">
+            <tr>
+                <th><a class="link-custom"
+                        href="?sort_by=variant_id&order={% if sort_by == 'variant_id' and order == '' %}-{% endif %}">Variant
+                        ID
+                        {% if sort_by == 'variant_id' %}
+                        {% if order == '' %}<span class="sort-arrow ml-1">&uarr;</span>{% else %}<span
+                            class="sort-arrow ml-1">&darr;</span>{% endif %}
+                        {% endif %}</a>
+                </th>
+                <th><a class="link-custom"
+                        href="?sort_by=gene&order={% if sort_by == 'gene' and order == '' %}-{% endif %}">Gene
+                        {% if sort_by == 'gene' %}
+                        {% if order == '' %}<span class="sort-arrow ml-1">&uarr;</span>{% else %}<span
+                            class="sort-arrow ml-1">&darr;</span>{% endif %}
+                        {% endif %}</a>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for variant in variants %}
+            <tr class="{% cycle 'table-active' 'table-light' %}">
+                <td><a href="{% url 'variant_detail' variant.variant_id %}">{{ variant.variant_id }}</a></td>
+                <td>{{ variant.gene }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="mt-4">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+
+                {% if variants.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1" aria-label="First">« First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ variants.previous_page_number }}"
+                        aria-label="Previous">Previous</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">« First</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">Previous</span>
+                </li>
+                {% endif %}
+
+                <li class="page-item disabled">
+                    <span class="page-link">
+                        Page {{ variants.number }} of {{ variants.paginator.num_pages }}
+                    </span>
+                </li>
+
+                {% if variants.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ variants.next_page_number }}" aria-label="Next">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ variants.paginator.num_pages }}" aria-label="Last">Last
+                        »</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Next</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">Last »</span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endblock %}

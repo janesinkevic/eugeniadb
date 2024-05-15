@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}euGENia Database{% endblock title %}</title>
+    {% load bootstrap4 %}
+    {% bootstrap_css %}
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Open Sans', sans-serif;
+            font-size: 0.9rem;
+            color: #07020D;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        th {
+            font-weight: 400;
+        }
+
+        .bg-custom-blue {
+            background-color: #046E9B;
+        }
+
+        .text-custom-black {
+            color: #07020D;
+        }
+
+        .card-body.bg-light {
+            background-color: #F1E9DB;
+        }
+
+        .page-link {
+            color: #046E9B;
+        }
+
+        .btn-custom {
+            background-color: #F1E9DB;
+            border-color: #A39B8B;
+        }
+
+        .btn-reset {
+            background-color: #A39B8B;
+            border-color: #A39B8B;
+        }
+
+        .btn-custom:hover {
+            background-color: #E9E2D6;
+            border-color: #A39B8B;
+        }
+
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: #F1E9DB;
+        }
+
+        .container-fluid {
+            padding: 0 15px;
+        }
+
+        .link-custom,
+        .link-custom:hover,
+        .link-custom:active {
+            text-decoration: none;
+            color: white;
+        }
+
+        .text-decoration-none {
+            text-decoration: none;
+        }
+
+        .sort-arrow {
+            font-size: 0.9em;
+        }
+
+        .ol-custom {
+            counter-reset: list-counter;
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .ol-custom li::before {
+            counter-increment: list-counter;
+            content: counter(list-counter) ". ";
+            font-weight: bold;
+            margin-right: 10px;
+            color: #046E9B;
+        }
+
+        .list-group-item {
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+        }
+
+        .list-group-item strong {
+            color: #046E9B;
+        }
+
+        .list-group-item div {
+            margin-bottom: 0.5rem;
+        }
+
+        .list-group-item p {
+            margin-bottom: 0;
+        }
+
+        .list-group-numbered {
+            counter-reset: list-counter;
+            list-style: none;
+        }
+
+        .list-group-numbered .list-group-item {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .list-group-numbered .list-group-item::before {
+            content: counter(list-counter) ". ";
+            counter-increment: list-counter;
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+            color: #046E9B;
+        }
+
+        .dropdown-menu-custom {
+            background-color: #F1E9DB;
+            border-color: #046E9B;
+        }
+
+        .dropdown-menu-custom:hover,
+        .dropdown-menu-custom:active {
+            background-color: #F1E9DB;
+        }
+
+        .dropdown-item {
+            font-size: 0.8rem;
+        }
+    </style>
+    {% block additional_css %}{% endblock %}
+</head>
+
+<body class="bg-light">
+
+    <div class="container-fluid mt-4">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-custom-blue">
+            <a class="navbar-brand" href="{% url 'genvariant_index' %}">euGENia</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown"
+                aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNavDropdown">
+                <ul class="navbar-nav mr-auto">
+                    <li
+                        class="nav-item {% if request.resolver_match.url_name == 'genvariant_index' %}active{% endif %}">
+                        <a class="nav-link" href="{% url 'genvariant_index' %}">Variants</a>
+                    </li>
+                    <li class="nav-item {% if request.resolver_match.url_name == 'sample_list' %}active{% endif %}">
+                        <a class="nav-link" href="{% url 'sample_list' %}">Samples</a>
+                    </li>
+                    <li class="nav-item {% if request.resolver_match.url_name == 'documentation' %}active{% endif %}">
+                        <a class="nav-link" href="{% url 'documentation' %}">Documentation</a>
+                    </li>
+                    <li class="nav-item {% if request.resolver_match.url_name == 'about' %}active{% endif %}">
+                        <a class="nav-link" href="{% url 'about' %}">About</a>
+                    </li>
+                </ul>
+
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false">
+                            {{ user.username }}
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-custom dropdown-menu-end"
+                            aria-labelledby="navbarDropdownMenuLink">
+                            <a class="dropdown-item text-custom-black" href="{% url 'profile' %}">User Profile</a>
+                            <a class="dropdown-item text-custom-black" href="{% url 'logout' %}">Log out</a>
+                        </div>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">Log In</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </nav>
+
+        {% block content %}
+        {% endblock content %}
+    </div>
+
+    {% bootstrap_javascript jquery='full' %}
+    {% block additional_scripts %}{% endblock %}
+</body>
+
+</html>

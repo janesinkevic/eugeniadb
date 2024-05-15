@@ -1,0 +1,82 @@
+{% load static %}
+{% load bootstrap4 %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    {% bootstrap_css %}
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Open Sans', sans-serif;
+            color: #07020D;
+            background-color: #f8f9fa;
+        }
+
+        .card-custom {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: none;
+        }
+
+        .btn-custom {
+            background-color: #F1E9DB;
+            border-color: #A39B8B;
+            color: #07020D;
+        }
+
+        .btn-custom:hover {
+            background-color: #E9E2D6;
+            border-color: #A39B8B;
+        }
+
+        .form-control {
+            border-radius: 0;
+            border-color: #A39B8B;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card card-custom">
+                    <div class="card-header bg-custom-blue text-white">
+                        <h3 class="mb-0">User Login</h3>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" action="{% url 'login' %}?next={% url 'genvariant_index' %}">
+                            {% csrf_token %}
+                            {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                            {% endif %}
+                            <div class="form-group">
+                                <label for="id_username" class="text-custom-black">Username</label>
+                                <input type="text" name="username" id="id_username" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="id_password" class="text-custom-black">Password</label>
+                                <input type="password" name="password" id="id_password" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-custom btn-block">Log in</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% bootstrap_javascript jquery='full' %}
+</body>
+
+</html>

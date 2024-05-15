@@ -1,0 +1,101 @@
+{% extends 'app/base.html' %}
+
+{% block content %}
+<div class="my-3">
+    <a href="{% url 'genvariant_index' %}" class="btn btn-custom">Back to Main Table</a>
+</div>
+<div class="card mt-4 mb-4">
+    <div class="card-header bg-custom-blue text-white">
+        Variant Details
+    </div>
+    <div class="card-body bg-light">
+        <h5 class="card-title text-custom-black"><strong>{{ variant.variant_id }}</strong></h5>
+        <p class="card-text"><strong>Gene:</strong> {{ variant.gene }}</p>
+        <p class="card-text"><strong>Chromosome:</strong> {{ variant.chromosome }}</p>
+        <p class="card-text"><strong>Variant Start:</strong> {{ variant.variant_start }}</p>
+        <p class="card-text"><strong>Variant End:</strong> {{ variant.variant_end }}</p>
+        <p class="card-text"><strong>Reference:</strong> {{ variant.reference }}</p>
+        <p class="card-text"><strong>Alternate:</strong> {{ variant.alternate }}</p>
+        <p class="card-text"><strong>Zygosity:</strong> {{ variant.zygosity }}</p>
+        <p class="card-text"><strong>GnomAD Total AF:</strong> {{ variant.gnomad_total_af }}</p>
+        <p class="card-text"><strong>CADD PHRED:</strong> {{ variant.cadd_phred }}</p>
+        <p class="card-text"><strong>dbSNP ID:</strong> {{ variant.dbsnp_id }}</p>
+        <p class="card-text"><strong>Consequence:</strong> {{ variant.consequence }}</p>
+        <p class="card-text"><strong>COSMIC ID:</strong> {{ variant.cosmic_id }}</p>
+        {% for set in samples_by_experiments %}
+        {% if set.experiment_samples %}
+        <p class="card-text"><strong>Counts in {{set.experiment_name}}:</strong> {{ set.experiment_counts }}</p>
+        <p class="card-text"><strong>Frequency in {{set.experiment_name}}:</strong> {{ set.variant_freq }}</p>
+        {% endif %}
+        {% endfor %}
+
+        <p class="card-text"><strong>Samples with Variant:</strong></p>
+
+        {% for set in samples_by_experiments %}
+        {% if set.experiment_samples %}
+        <dl>
+            <dt><a href="#samplesList{{set.experiment_name}}" class="card-link" data-toggle="collapse"
+                    aria-expanded="false" aria-controls="samplesList{{set.experiment_name}}">
+                    <p class="card-text"><strong>{{set.experiment_name}}</strong></p>
+                </a></dt>
+            <dd>
+                <div class="collapse" id="samplesList{{set.experiment_name}}">
+                    <ol class="list-group list-group-numbered list-group-flush">
+                        {% for sample in set.experiment_samples %}
+                        <li class="list-group-item">{{ sample }}</li>
+                        {% endfor %}
+                    </ol>
+                </div>
+            </dd>
+        </dl>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Evaluation Section -->
+<div class="card mt-4">
+    <div class="card-header bg-custom-blue text-white">
+        Variant Evaluations
+    </div>
+    <div class="card-body bg-light">
+        {% if variant.evaluations.all %}
+        <ol class="list-group ol-custom">
+            {% for evaluation in evaluations %}
+            <li class="list-group-item">
+                <strong>Evaluation:</strong> {{ evaluation.get_value_display }}
+                {% if evaluation.interpreted_by %}
+                <div><strong>Interpreted by:</strong> {{ evaluation.interpreted_by }}</div>
+                {% endif %}
+                <div><strong>Date:</strong> {{ evaluation.eval_date }}</div>
+                {% if evaluation.interpretation %}
+                <div><strong>Notes:</strong>
+                    <p class="mb-0">{{ evaluation.interpretation }}</p>
+                </div>
+                {% endif %}
+            </li>
+
+            {% endfor %}
+        </ol>
+        {% else %}
+        <p>No evaluations available.</p>
+        {% endif %}
+
+        <button class="btn btn-custom mt-3" type="button" data-toggle="collapse" data-target="#addEvaluation"
+            aria-expanded="false" aria-controls="addEvaluation">
+            Add Evaluation
+        </button>
+
+        <div class="collapse" id="addEvaluation">
+            <div class="card card-body mt-3">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ evaluation_form.as_p }}
+                    <input type="submit" class="btn btn-custom" value="Submit Evaluation">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

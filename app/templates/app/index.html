@@ -1,0 +1,372 @@
+{% extends "app/base.html" %}
+
+{% block content %}
+<h1 class="text-custom-black text-center mb-4">Table of genetic variants</h1>
+
+<form method="get" action="" class="bg-custom-blue p-4 rounded mb-4">
+    <div class="form-group d-flex align-items-center">
+        <label for="variant_id" class="mr-3 text-white">Variant ID:</label>
+        <input type="text" id="variant_id" name="variant_id" value="{{ request.GET.variant_id }}" class="form-control">
+    </div>
+    <div class="form-group d-flex align-items-center">
+        <label for="gene" class="mr-3 text-white">Gene:</label>
+        <input type="text" id="gene" class="form-control" name="gene" value="{{ request.GET.gene }}">
+    </div>
+    <div class="form-group d-flex align-items-center">
+        <label for="gnomad_total_af" class="mr-3 text-white">GnomAD Total AF:</label>
+        <select id="gnomad_total_af_compare" name="gnomad_total_af_compare" class="custom-select mr-3">
+            <option value="">Select comparison</option>
+            <option value="gte" {% if compare_options.gnomad.selected_gte %}selected{% endif %}>Greater than</option>
+            <option value="lte" {% if compare_options.gnomad.selected_lte %}selected{% endif %}>Less than</option>
+        </select>
+        <input type="text" id="gnomad_total_af" class="form-control" name="gnomad_total_af"
+            value="{{ request.GET.gnomad_total_af }}">
+    </div>
+    <div class="form-group d-flex align-items-center">
+        <label for="cadd_phred" class="mr-3 text-white">CADD PHRED:</label>
+        <select id="cadd_phred_compare" name="cadd_phred_compare" class="custom-select mr-3">
+            <option value="">Select comparison</option>
+            <option value="gte" {% if compare_options.cadd_phred.selected_gte %}selected{% endif %}>Greater than
+            </option>
+            <option value="lte" {% if compare_options.cadd_phred.selected_lte %}selected{% endif %}>Less than</option>
+        </select>
+        <input type="text" id="cadd_phred" class="form-control" name="cadd_phred" value="{{ request.GET.cadd_phred }}">
+    </div>
+    <div class="form-group d-flex align-items-center">
+        <label for="dbsnp_id" class="mr-3 text-white">dbSNP ID:</label>
+        <input type="text" id="dbsnp_id" name="dbsnp_id" class="form-control" value="{{ request.GET.dbsnp_id }}">
+    </div>
+    <div class="form-group d-flex align-items-center">
+        <label for="cosmic_id" class="mr-3 text-white">Cosmic ID:</label>
+        <input type="text" id="cosmic_id" name="cosmic_id" value="{{ request.GET.cosmic_id }}" class="form-control">
+    </div>
+    <div class="form-group d-flex align-items-center">
+        <label for="frequency_threshold" class="mr-3 text-white">Frequency Threshold:</label>
+        <select id="frequency_compare" name="frequency_compare" class="custom-select mr-3">
+            <option value="">Select comparison</option>
+            <option value="gte" {% if compare_options.frequency.selected_gte %}selected{% endif %}>Greater
+                than</option>
+            <option value="lte" {% if compare_options.frequency.selected_lte %}selected{% endif %}>Less
+                than</option>
+        </select>
+        <input type="text" id="frequency_threshold" class="form-control" name="frequency_threshold"
+            value="{{ request.GET.frequency_threshold }}" placeholder="Enter threshold">
+    </div>
+    <fieldset class="form-group">
+        <legend class="text-white mb-4">ACMG Evaluation:</legend>
+        <div class="form-group">
+            <label for="interpreted_by" class="mr-3 text-white">Interpreted By:</label>
+            <input type="text" id="interpreted_by" name="interpreted_by" class="form-control"
+                value="{{ request.GET.interpreted_by|default:'' }}">
+        </div>
+        {% for value, description in ACMG_VALUES %}
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="evaluation" value="{{ value }}"
+                id="evaluation_{{ value }}" {% if value|stringformat:"s" in selected_evaluations %}checked{% endif %}>
+            <label class="form-check-label text-white" for="evaluation_{{ value }}">
+                {{ description }}
+            </label>
+        </div>
+        {% endfor %}
+    </fieldset>
+    <fieldset class="form-group">
+        <legend class="text-white mb-4">Select Consequences:</legend>
+        {% for consequence in unique_consequences %}
+        <div class="form-check d-flex align-items-center flex-wrap">
+            <input class="form-check-input" type="checkbox" name="consequence" value="{{ consequence }}"
+                id="consequence_{{ forloop.counter }}" {% if consequence in selected_consequences %}checked{% endif %}>
+            <label class="form-check-label text-white" for="consequence_{{ forloop.counter }}">
+                {{ consequence }}
+            </label>
+        </div>
+        {% endfor %}
+    </fieldset>
+    <button type="submit" class="btn btn-custom mt-2">Filter</button>
+    <a href="{% url 'genvariant_index' %}" class="btn btn-info mt-2 text-white">Reset Filters</a>
+</form>
+
+{% load custom_filters %}
+<table class="table table-bordered table-striped">
+    <thead class="bg-custom-blue text-white">
+        <tr>
+            <th><a class="link-custom"
+                    href="?sort_by=variant_id&order={% if sort_by == 'variant_id' and order == '' %}-{% endif %}">Variant
+                    ID
+                    {% if sort_by == 'variant_id' %}
+                    {% if order == '' %}<span class="sort-arrow ml-1">&uarr;</span>{% else %}<span
+                        class="sort-arrow ml-1">&darr;</span>{% endif %}
+                    {% endif %}</a>
+            </th>
+            <th><a class="link-custom"
+                    href="?sort_by=gene&order={% if sort_by == 'gene' and order == '' %}-{% endif %}">Gene
+                    {% if sort_by == 'gene' %}
+                    {% if order == '' %}<span class="sort-arrow ml-1">&uarr;</span>{% else %}<span
+                        class="sort-arrow ml-1">&darr;</span>{% endif %}
+                    {% endif %}
+                </a>
+            </th>
+            <th><a class="link-custom"
+                    href="?sort_by=variant_start&order={% if sort_by == 'variant_start' and order == '' %}-{% endif %}">Variant
+                    start
+                    {% if sort_by == 'variant_start' %}
+                    {% if order == '' %}<span class="sort-arrow ml-1">&uarr;</span>{% else %}<span
+                        class="sort-arrow ml-1">&darr;</span>{% endif %}
+                    {% endif %}
+                </a>
+            </th>
+            <th><a class="link-custom"
+                    href="?sort_by=variant_end&order={% if sort_by == 'variant_end' and order == '' %}-{% endif %}">Variant
+                    end
+                    {% if sort_by == 'variant_end' %}
+                    {% if order == '' %}<span class="sort-arrow ml-1">&uarr;</span>{% else %}<span
+                        class="sort-arrow ml-1">&darr;</span>{% endif %}
+                    {% endif %}
+                </a>
+            </th>
+            <th><a class="link-custom"
+                    href="?sort_by=reference&order={% if sort_by == 'reference' and order == '' %}-{% endif %}">Reference
+                    {% if sort_by == 'reference' %}
+                    {% if order == '' %}<span class="sort-arrow ml-1">&uarr;</span>{% else %}<span
+                        class="sort-arrow ml-1">&darr;</span>{% endif %}
+                    {% endif %}
+                </a>
+            </th>
+            <th><a class="link-custom"
+                    href="?sort_by=alternate&order={% if sort_by == 'alternate' and order == '' %}-{% endif %}">Alternate
+                    {% if sort_by == 'alternate' %}
+                    {% if order == '' %}<span class="sort-arrow ml-1">&uarr;</span>{% else %}<span
+                        class="sort-arrow ml-1">&darr;</span>{% endif %}
+                    {% endif %}
+                </a>
+            </th>
+            <th><a class="link-custom"
+                    href="?sort_by=zygosity&order={% if sort_by == 'zygosity' and order == '' %}-{% endif %}">Zygosity
+                    {% if sort_by == 'zygosity' %}
+                    {% if order == '' %}<span class="sort-arrow ml-1">&uarr;</span>{% else %}<span
+                        class="sort-arrow ml-1">&darr;</span>{% endif %}
+                    {% endif %}
+                </a>
+            </th>
+            <th><a class="link-custom"
+                    href="?sort_by=gnomad_total_af&order={% if sort_by == 'gnomad_total_af' and order == '' %}-{% endif %}">GnomAD
+                    Total AF
+                    {% if sort_by == 'gnomad_total_af' %}
+                    {% if order == '' %}<span class="sort-arrow ml-1">&uarr;</span>{% else %}<span
+                        class="sort-arrow ml-1">&darr;</span>{% endif %}
+                    {% endif %}
+                </a>
+            </th>
+            <th><a class="link-custom"
+                    href="?sort_by=cadd_phred&order={% if sort_by == 'cadd_phred' and order == '' %}-{% endif %}">CADD
+                    PHRED
+                    {% if sort_by == 'cadd_phred' %}
+                    {% if order == '' %}<span class="sort-arrow ml-1">&uarr;</span>{% else %}<span
+                        class="sort-arrow ml-1">&darr;</span>{% endif %}
+                    {% endif %}
+                </a>
+            </th>
+            <th>
+                <a class="link-custom"
+                    href="?sort_by=dbsnp_id&order={% if sort_by == 'dbsnp_id' and order == '' %}-{% endif %}">dbSNP
+                    ID
+                    {% if sort_by == 'dbsnp_id' %}
+                    {% if order == '' %}<span class="sort-arrow ml-1">&uarr;</span>{% else %}<span
+                        class="sort-arrow ml-1">&darr;</span>{% endif %}
+                    {% endif %}
+                </a>
+            </th>
+            <th><a class="link-custom"
+                    href="?sort_by=consequence&order={% if sort_by == 'consequence' and order == '' %}-{% endif %}">Consequence
+                    {% if sort_by == 'consequence' %}
+                    {% if order == '' %}<span class="sort-arrow ml-1">&uarr;</span>{% else %}<span
+                        class="sort-arrow ml-1">&darr;</span>{% endif %}
+                    {% endif %}
+                </a>
+            </th>
+            <th><a class="link-custom"
+                    href="?sort_by=cosmic_id&order={% if sort_by == 'cosmic_id' and order == '' %}-{% endif %}">Cosmic
+                    ID
+                    {% if sort_by == 'cosmic_id' %}
+                    {% if order == '' %}<span class="sort-arrow ml-1">&uarr;</span>{% else %}<span
+                        class="sort-arrow ml-1">&darr;</span>{% endif %}
+                    {% endif %}
+                </a>
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for genvariant in genvariants %}
+        <tr class="{% cycle 'table-active' 'table-light' %}">
+            <td><a href="{% url 'variant_detail' genvariant.variant_id %}">
+                    {{ genvariant.variant_id }}
+                </a></td>
+            <td>{{ genvariant.gene }}</td>
+            <td>{{ genvariant.variant_start }}</td>
+            <td>{{ genvariant.variant_end }}</td>
+            <td>{{ genvariant.reference }}</td>
+            <td>{{ genvariant.alternate }}</td>
+            <td>{{ genvariant.zygosity }}</td>
+            <td>{{ genvariant.gnomad_total_af }}</td>
+            <td>{{ genvariant.cadd_phred }}</td>
+            <td>{{ genvariant.dbsnp_id }}</td>
+            <td>{{ genvariant.consequence }}</td>
+            <td>{{ genvariant.cosmic_id }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="mt-4">
+    <p>In total {{count}} variants</p>
+</div>
+
+<div class="mt-4">
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link"
+                    href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                    aria-label="First">« First</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link"
+                    href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                    aria-label="Previous">Previous</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">« First</span>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link">Previous</span>
+            </li>
+            {% endif %}
+
+            <li class="page-item disabled">
+                <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            </li>
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link"
+                    href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                    aria-label="Next">Next</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link"
+                    href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                    aria-label="Last">Last »</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">Next</span>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link">Last »</span>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+
+<form method="post" class="bg-custom-blue p-4 rounded mb-4">
+    {% csrf_token %}
+    <fieldset>
+        <legend class="text-white mb-4">Export variant data:</legend>
+
+        <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="select_all" onclick="toggleCheckboxes(this)">
+            <label class="form-check-label text-white" for="select_all">
+                Select/Deselect All
+            </label>
+        </div>
+
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="columns" value="variant_id" id="variant_id">
+            <label class="form-check-label text-white" for="variant_id">
+                Variant ID
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="columns" value="gene" id="gene">
+            <label class="form-check-label text-white" for="gene">
+                Gene
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="columns" value="variant_start" id="variant_start">
+            <label class="form-check-label text-white" for="variant_start">
+                Variant start
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="columns" value="variant_end" id="variant_end">
+            <label class="form-check-label text-white" for="variant_end">
+                Variant end
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="columns" value="reference" id="reference">
+            <label class="form-check-label text-white" for="reference">
+                Reference
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="columns" value="alternate" id="alternate">
+            <label class="form-check-label text-white" for="alternate">
+                Alternate
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="columns" value="zygosity" id="zygosity">
+            <label class="form-check-label text-white" for="zygosity">
+                Zygosity
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="columns" value="gnomad_total_af" id="gnomad_total_af">
+            <label class="form-check-label text-white" for="gnomad_total_af">
+                GnomAD Total AF
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="columns" value="cadd_phred" id="cadd_phred">
+            <label class="form-check-label text-white" for="cadd_phred">
+                CADD PHRED
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="columns" value="dbsnp_id" id="dbsnp_id">
+            <label class="form-check-label text-white" for="dbsnp_id">
+                dbSNP ID
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="columns" value="consequence" id="consequence">
+            <label class="form-check-label text-white" for="consequence">
+                Consequence
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="columns" value="cosmic_id" id="cosmic_id">
+            <label class="form-check-label text-white" for="cosmic_id">
+                Cosmic ID
+            </label>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3" name="export_to_csv">Export to CSV</button>
+    </fieldset>
+</form>
+
+</div>
+
+<script>
+    function toggleCheckboxes(source) {
+        checkboxes = document.getElementsByName('columns');
+        for (var i = 0, n = checkboxes.length; i < n; i++) {
+            checkboxes[i].checked = source.checked;
+        }
+    }
+</script>
+{% endblock %}
