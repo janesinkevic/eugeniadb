@@ -84,7 +84,7 @@ def index(request):
     if dbsnp_id:
         combined_conditions &= Q(dbsnp_id=dbsnp_id)
 
-    # cosmic_id - exact match
+    # cosmic_id - filter by substring
     cosmic_id = request.GET.get("cosmic_id")
     if cosmic_id:
         combined_conditions &= Q(cosmic_id__icontains=cosmic_id)
